@@ -2,6 +2,7 @@ from fastapi import FastAPI, File, UploadFile
 from fastapi.responses import HTMLResponse
 import shutil
 import os
+import utils
 
 app = FastAPI()
 
@@ -11,11 +12,15 @@ os.makedirs(UPLOAD_FOLDER, exist_ok=True)  # Ensure the upload directory exists
 @app.post("/upload/")
 async def upload_image(file: UploadFile = File(...)):
     file_path = os.path.join(UPLOAD_FOLDER, file.filename)
+    # Get the local ip of your computer
+    # ip = utils.get_local_ip()
     
     with open(file_path, "wb") as buffer:
         shutil.copyfileobj(file.file, buffer)
 
-    return {"filename": file.filename, "url": f"http://192.168.1.3:8000/uploads/{file.filename}"}
+    ip = utils.get_local_ip()
+    return {"filename": file.filename, "url": f"{ip}{file.filename}"}
+
 
 @app.get("/", response_class=HTMLResponse)
 async def home():
