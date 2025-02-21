@@ -18,7 +18,7 @@ async def upload_image(file: UploadFile = File(...)):
     with open(file_path, "wb") as buffer:
         shutil.copyfileobj(file.file, buffer)
 
-    ip = utils.get_local_ip()
+    ip = utils.get_ip()
     return {"filename": file.filename, "url": f"{ip}{file.filename}"}
 
 
