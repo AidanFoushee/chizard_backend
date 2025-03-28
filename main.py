@@ -3,6 +3,9 @@ from fastapi.responses import HTMLResponse
 import shutil
 import os
 import utils
+import board_detection
+import piece_detection
+
 
 app = FastAPI()
 
@@ -14,6 +17,9 @@ async def upload_image(file: UploadFile = File(...)):
     file_path = os.path.join(UPLOAD_FOLDER, file.filename)
     # Get the local ip of your computer
     # ip = utils.get_local_ip()
+
+    grid = board_detection.detect_board(file_path)
+    pieces = piece_detection.detect_pieces(file_path)
     
     with open(file_path, "wb") as buffer:
         shutil.copyfileobj(file.file, buffer)
