@@ -5,7 +5,8 @@ import os
 import utils
 import board_detection
 import piece_detection
-
+import map_pieces
+import fen
 
 app = FastAPI()
 
@@ -20,12 +21,14 @@ async def upload_image(file: UploadFile = File(...)):
 
     grid = board_detection.detect_board(file_path)
     pieces = piece_detection.detect_pieces(file_path)
+    mapped_pieces = map_pieces.map_pieces_to_squares(pieces, grid)
+    fen_code = fen.generate_fen(mapped_pieces)
     
     with open(file_path, "wb") as buffer:
         shutil.copyfileobj(file.file, buffer)
 
     ip = utils.get_ip()
-    return {"filename": file.filename, "url": f"{ip}{file.filename}"}
+    return {"filename": file.filename, "url": f"{ip}{file.filename}, FEN code: {fen_code}"}
 
 
 @app.get("/", response_class=HTMLResponse)
