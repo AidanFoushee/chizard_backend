@@ -19,8 +19,8 @@ async def upload_image(file: UploadFile = File(...)):
     # Get the local ip of your computer
     # ip = utils.get_local_ip()
 
-    grid = board_detection.detect_board(file_path)
     pieces = piece_detection.detect_pieces(file_path)
+    grid = board_detection.detect_board_grid(file_path)
     mapped_pieces = map_pieces.map_pieces_to_squares(pieces, grid)
     fen_code = fen.generate_fen(mapped_pieces)
     
