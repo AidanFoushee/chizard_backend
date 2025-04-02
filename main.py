@@ -1,5 +1,6 @@
 from fastapi import FastAPI, File, UploadFile
 from fastapi.responses import HTMLResponse
+from pydantic import BaseModel
 import shutil
 import os
 import utils
@@ -7,6 +8,8 @@ import board_detection
 import piece_detection
 import map_pieces
 import fen
+import cv2
+from chess_analysis import analyze_fen
 
 app = FastAPI()
 
@@ -15,21 +18,46 @@ os.makedirs(UPLOAD_FOLDER, exist_ok=True)  # Ensure the upload directory exists
 
 @app.post("/upload/")
 async def upload_image(file: UploadFile = File(...)):
+    print(f"📸 Received image: {file.filename}")
     file_path = os.path.join(UPLOAD_FOLDER, file.filename)
-    # Get the local ip of your computer
-    # ip = utils.get_local_ip()
-
-    grid = board_detection.detect_board(file_path)
-    pieces = piece_detection.detect_pieces(file_path)
-    mapped_pieces = map_pieces.map_pieces_to_squares(pieces, grid)
-    fen_code = fen.generate_fen(mapped_pieces)
     
     with open(file_path, "wb") as buffer:
         shutil.copyfileobj(file.file, buffer)
+    print("✅ Image saved successfully!")
+
+    # grid = board_detection.detect_board_grid(file_path)
+    # grid = board_detection.detect_board_grid(file_path)
+    # if grid is None:
+    #     return {"error": "Failed to detect the chessboard grid. Please try another image."}
+    # else:
+    #     print("🛠 Detected Board Grid:", grid)
+   
+    pieces = piece_detection.detect_pieces(file_path)
+    print("🛠 Detected Pieces:", pieces)
+    
+    # mapped_pieces = map_pieces.map_pieces_to_squares(pieces)
+    # print("🛠 Mapped Pieces:", mapped_pieces)
+    
+    # fen_code = fen.generate_fen(mapped_pieces)
+    # print("♟ Generated FEN:", fen_code)
 
     ip = utils.get_ip()
-    return {"filename": file.filename, "url": f"{ip}{file.filename}, FEN code: {fen_code}"}
+    return {"filename": file.filename, "url": f"{ip}{file.filename}"}
 
+# New endpoint to analyze FEN
+class FENRequest(BaseModel):
+    fen: str
+
+@app.post("/analyze_fen")
+async def analyze_fen_endpoint(fen_request: FENRequest):
+    fen = fen_request.fen
+    print(f"♟ Received FEN: {fen}")
+    
+    # Use the analyze_fen function to get the evaluation and best move
+    analysis_result = analyze_fen(fen)
+    print("♟ Analysis Result:", analysis_result)
+
+    return {"evaluation": analysis_result["evaluation"], "best_move": analysis_result["best_move"]}
 
 @app.get("/", response_class=HTMLResponse)
 async def home():
@@ -97,8 +125,6 @@ async def home():
         </body>
     </html>
     """
-
-
-
+# Serve static files (uploaded images)
 from fastapi.staticfiles import StaticFiles
 app.mount("/uploads", StaticFiles(directory=UPLOAD_FOLDER), name="uploads")
